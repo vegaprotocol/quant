@@ -54,7 +54,7 @@ func BSVega(S, K, r, sigma, T float64) float64 {
 }
 
 // ImpliedVol calculates the implied volatility
-// from call or price as indicated by isCall
+// from call or put price as indicated by isCall
 func ImpliedVol(S, K, r, T, price float64, isCall bool) (float64, error) {
 	const solverTol float64 = 1e-12
 	const solverMaxIt int = 100
