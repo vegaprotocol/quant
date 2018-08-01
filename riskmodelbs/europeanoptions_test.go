@@ -3,10 +3,11 @@ package riskmodelbs
 import (
 	"fmt"
 	"math"
-	"quant/bsformula"
-	"quant/riskmeasures"
 	"testing"
 	"time"
+
+	"gitlab.com/vega-protocol/quant/bsformula"
+	"gitlab.com/vega-protocol/quant/riskmeasures"
 
 	"gonum.org/v1/gonum/stat/distuv"
 )

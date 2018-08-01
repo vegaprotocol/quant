@@ -2,7 +2,8 @@ package riskmodelbs
 
 import (
 	"math"
-	"quant/riskmeasures"
+
+	"gitlab.com/vega-protocol/quant/riskmeasures"
 )
 
 // RiskFactors are used in margin calculation as follows:
