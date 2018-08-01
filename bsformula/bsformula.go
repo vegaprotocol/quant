@@ -1,7 +1,7 @@
 package bsformula
 
 import . "math"
-import . "quant/misc"
+import . "gitlab.com/vega-protocol/quant/misc"
 
 func d1Fn(S, K, r, sigma, T float64) float64 {
 	return (Log(S/K) + (r+sigma*sigma*0.5)*T) / (sigma * Sqrt(T))
