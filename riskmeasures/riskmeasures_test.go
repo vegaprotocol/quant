@@ -59,8 +59,8 @@ var testValsForESLognormal = []struct {
 func runTestVaRAndESLogNormalUsingMC(t *testing.T, positiveLogNormal bool) {
 	// these two constants are related, if the test takes too long then reduce num samples but
 	// increase tolerance... (but this decreases the strength of the test I am afraid)
-	const testToleranceForMC float64 = 1.0e-3
-	const numMCSamples int = 4000000
+	const testToleranceForMC float64 = 2.5e-3
+	const numMCSamples int = 8000000
 
 	Z := make([]float64, 2*numMCSamples)
 	for i := 0; i < numMCSamples; i++ {
