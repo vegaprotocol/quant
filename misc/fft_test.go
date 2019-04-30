@@ -4,6 +4,8 @@ import (
 	"math"
 	"math/cmplx"
 	"testing"
+
+	"gitlab.com/vega-protocol/quant/bsformula"
 )
 
 func TestFFTInputChecks(t *testing.T) {
@@ -88,4 +90,62 @@ func TestFFTvsPresaved(t *testing.T) {
 			}
 		}
 	}
+}
+
+// We can calculate the price of call option in the Black-Scholes
+// model using FFT; so if the FFT code is correct then
+// the price should closely match the BS formula
+func TestFFTMethodForBlackScholes(t *testing.T) {
+	const tol float64 = 1e-2
+	const S float64 = 100
+	const minK float64 = 1
+	const sigma float64 = 0.1
+	const r float64 = 0.0
+	const T float64 = 1
+
+	strikesGrid, optVals, err := BSCallPriceFft(minK, S, r, sigma, T)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+
+	BSValsFFT := Function{
+		X: strikesGrid,
+		Y: optVals,
+	}
+	K := 100.0
+	bsAtmPrice := bsformula.BSCallPrice(S, K, r, sigma, T)
+	fftAtmPrice := BSValsFFT.At(K)
+	if math.Abs(bsAtmPrice-fftAtmPrice) > tol {
+		t.Errorf("BS = %g, FFT = %g", bsAtmPrice, fftAtmPrice)
+	}
+}
+
+const i1 complex128 = complex(0, 1)
+
+func BSCallPriceFft(minK, S, r, sigma, T float64) ([]float64, []float64, error) {
+	N := int(math.Pow(2, 14))
+	minSmallK := math.Log(minK / S)
+	halfSigmaSquareT := complex(0.5*sigma*sigma*T, 0)
+	// characteristic of normal r.v. with variance given by sigma^2 * T
+	phiTwo := func(u complex128) complex128 {
+		return cmplx.Exp(-halfSigmaSquareT*u*i1 - halfSigmaSquareT*u*u)
+	}
+
+	// this is the relevant characteristic function
+	zeta := func(v float64) complex128 {
+		vC := complex(v, 0)
+		return cmplx.Exp(i1*complex(v*r*T, 0)) * (phiTwo(vC-i1) - 1.0) / (i1 * vC * (1 + i1*vC))
+	}
+	gridSmallK, f, err := FourierTransformOfEvenInRealPartFn(minSmallK, N, zeta)
+	if err != nil {
+		return make([]float64, 0), make([]float64, 0), err
+	}
+	optVals := make([]float64, N)
+	strikesGrid := make([]float64, N)
+	for i := 0; i < N; i++ {
+		optVals[i] = S * (real(f[i]) + math.Max(1.0-math.Exp(gridSmallK[i]-r*T), 0.0))
+		strikesGrid[i] = S * math.Exp(gridSmallK[i])
+	}
+	return strikesGrid, optVals, err
 }
