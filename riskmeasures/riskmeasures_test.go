@@ -3,6 +3,7 @@ package riskmeasures
 import (
 	"math"
 	"sort"
+	"sync"
 	"testing"
 
 	"golang.org/x/exp/rand"
@@ -58,8 +59,8 @@ var testValsForESLognormal = []struct {
 func runTestVaRAndESLogNormalUsingMC(t *testing.T, positiveLogNormal bool) {
 	// these two constants are related, if the test takes too long then reduce num samples but
 	// increase tolerance... (but this decreases the strength of the test I am afraid)
-	const testToleranceForMC float64 = 1.0e-3
-	const numMCSamples int = 4000000
+	const testToleranceForMC float64 = 2.5e-3
+	const numMCSamples int = 8000000
 
 	Z := make([]float64, 2*numMCSamples)
 	for i := 0; i < numMCSamples; i++ {
@@ -71,12 +72,15 @@ func runTestVaRAndESLogNormalUsingMC(t *testing.T, positiveLogNormal bool) {
 	// since the exponential transformation is monotone and sigma > 0
 	// we can assume that once Z has been sorted exp(mu + sigma*Z) is also sorted
 	sort.Float64s(Z)
+	var wg sync.WaitGroup
 	for _, table := range testValsForESLognormal {
 		mu := table.mu
 		sigma := table.sigma
 		lambda := table.lambda
 
+		wg.Add(1)
 		go func(mu, sigma, lambda float64) {
+			defer wg.Done()
 			var varExact float64
 			var sign float64
 			var esExact float64
@@ -98,23 +102,17 @@ func runTestVaRAndESLogNormalUsingMC(t *testing.T, positiveLogNormal bool) {
 			varEmpirical := EmpiricalVaR(X, lambda, false) // to cover the test case
 			errorVaR := math.Abs(varEmpirical - varExact)
 			if math.IsNaN(errorVaR) || math.IsInf(errorVaR, 0) || errorVaR > testToleranceForMC {
-				t.Logf("mu=%g, sigma=%g, lambda=%g\n", mu, sigma, lambda)
-				t.Logf("varExact=%g\n", varExact)
-				t.Logf("varEmpirical=%g\n", varEmpirical)
-				t.Logf("Error for VaR=%g\n", errorVaR)
-				t.Errorf("VaR: Error=%g is greater than MC tolerance=%g", errorVaR, testToleranceForMC)
+				t.Errorf("VaR: Error greater than MC tolerance (%g): mu=%g, sigma=%g, lambda=%g, exact=%g, empirical=%g, error=%g\n", testToleranceForMC, mu, sigma, lambda, varExact, varEmpirical, errorVaR)
 			}
 
 			esEmpirical := EmpiricalEs(X, lambda, true)
 			errorES := math.Abs(esExact - esEmpirical)
 			if math.IsNaN(errorES) || math.IsInf(errorES, 0) || errorES > testToleranceForMC {
-				t.Logf("esExact=%g\n", esExact)
-				t.Logf("esEmpirical=%g\n", esEmpirical)
-				t.Logf("Error for ES=%g\n", errorES)
-				t.Errorf("ES: Error=%g is greater than MC tolerance=%g", errorES, testToleranceForMC)
+				t.Errorf("ES : Error greater than MC tolerance (%g): mu=%g, sigma=%g, lambda=%g, exact=%g, empirical=%g, error=%g\n", testToleranceForMC, mu, sigma, lambda, varExact, varEmpirical, errorES)
 			}
 		}(mu, sigma, lambda)
 	}
+	wg.Wait()
 }
 
 func TestVaRAndESLogNormalUsingMC(t *testing.T) {
