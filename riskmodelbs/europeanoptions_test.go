@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"gitlab.com/vega-protocol/quant/bsformula"
-	"gitlab.com/vega-protocol/quant/riskmeasures"
+	"code.vegaprotocol.io/quant/bsformula"
+	"code.vegaprotocol.io/quant/riskmeasures"
 
 	"gonum.org/v1/gonum/stat/distuv"
 )

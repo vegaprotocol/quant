@@ -1,7 +1,10 @@
 package bsformula
 
-import . "math"
-import . "gitlab.com/vega-protocol/quant/misc"
+import (
+	. "math"
+
+	"code.vegaprotocol.io/quant/misc"
+)
 
 func d1Fn(S, K, r, sigma, T float64) float64 {
 	return (Log(S/K) + (r+sigma*sigma*0.5)*T) / (sigma * Sqrt(T))
@@ -10,21 +13,21 @@ func d1Fn(S, K, r, sigma, T float64) float64 {
 // BSCallProb1 returns the P_1 in call = S P_1 - Ke^(-rT)P_2
 func BSCallProb1(S, K, r, sigma, T float64) float64 {
 	var d1 = d1Fn(S, K, r, sigma, T)
-	return ApproxGaussCdf(d1)
+	return misc.ApproxGaussCdf(d1)
 }
 
 // BSCallProb2 returns the P_2 in call = S P_1 - Ke^(-rT)P_2
 func BSCallProb2(S, K, r, sigma, T float64) float64 {
 	var d1 = d1Fn(S, K, r, sigma, T)
 	var d2 = d1 - sigma*Sqrt(T)
-	return ApproxGaussCdf(d2)
+	return misc.ApproxGaussCdf(d2)
 }
 
 // BSCallPrice calculates the call option price according to the BS formula
 func BSCallPrice(S, K, r, sigma, T float64) float64 {
 	var d1 = d1Fn(S, K, r, sigma, T)
 	var d2 = d1 - sigma*Sqrt(T)
-	return S*ApproxGaussCdf(d1) - K*Exp(-r*T)*ApproxGaussCdf(d2)
+	return S*misc.ApproxGaussCdf(d1) - K*Exp(-r*T)*misc.ApproxGaussCdf(d2)
 }
 
 func getPutFromCallPrice(S, K, r, T, callPrice float64) float64 {
@@ -38,19 +41,19 @@ func BSPutPrice(S, K, r, sigma, T float64) float64 {
 
 // BSCallDelta calculates the BS Delta (partial derivative w.r.t. S)
 func BSCallDelta(S, K, r, sigma, T float64) float64 {
-	return ApproxGaussCdf(d1Fn(S, K, r, sigma, T))
+	return misc.ApproxGaussCdf(d1Fn(S, K, r, sigma, T))
 }
 
 // BSPutDelta calculates the BS Delta (partial derivative w.r.t. S)
 func BSPutDelta(S, K, r, sigma, T float64) float64 {
-	return -ApproxGaussCdf(-d1Fn(S, K, r, sigma, T))
+	return -misc.ApproxGaussCdf(-d1Fn(S, K, r, sigma, T))
 }
 
 // BSVega calculates the BS Vega (partial derivative w.r.t. sigma)
 // Note that it's identical for both puts and calls
 func BSVega(S, K, r, sigma, T float64) float64 {
 	d1 := d1Fn(S, K, r, sigma, T)
-	return S * GaussDensity(d1) * Sqrt(T)
+	return S * misc.GaussDensity(d1) * Sqrt(T)
 }
 
 // ImpliedVol calculates the implied volatility
@@ -74,7 +77,7 @@ func ImpliedVol(S, K, r, T, price float64, isCall bool) (float64, error) {
 		return BSVega(S, K, r, sigma, T)
 	}
 
-	impliedVol, err := FindRoot(bsAsFnOfSigma, bsAsFnOfSigmaPrime, guessVol, solverMaxIt, solverTol)
+	impliedVol, err := misc.FindRoot(bsAsFnOfSigma, bsAsFnOfSigmaPrime, guessVol, solverMaxIt, solverTol)
 	if err == nil {
 		return impliedVol, nil
 	}
