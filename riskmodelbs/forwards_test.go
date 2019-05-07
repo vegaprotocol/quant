@@ -22,9 +22,9 @@ func TestBSFwdRiskFactorsVal(t *testing.T) {
 	const lambda float64 = 0.01
 
 	var paramsBs ModelParamsBS
-	paramsBs.mu = mu
-	paramsBs.r = r
-	paramsBs.sigma = sigma
+	paramsBs.Mu = mu
+	paramsBs.R = r
+	paramsBs.Sigma = sigma
 	riskFactors := RiskFactorsForward(lambda, tau, paramsBs)
 	const rfShort float64 = 5.5276558362e-03 // from IPython notebook
 	const rfLong float64 = 5.5011137953e-03
@@ -43,9 +43,9 @@ func TestBSFwdRiskFactorsOrder(t *testing.T) {
 
 	for runIdx := 0; runIdx < numRuns; runIdx++ {
 		var paramsBs ModelParamsBS
-		paramsBs.mu = distuv.UnitUniform.Rand()
-		paramsBs.r = distuv.UnitUniform.Rand()
-		paramsBs.sigma = distuv.UnitUniform.Rand()
+		paramsBs.Mu = distuv.UnitUniform.Rand()
+		paramsBs.R = distuv.UnitUniform.Rand()
+		paramsBs.Sigma = distuv.UnitUniform.Rand()
 		tau := distuv.UnitUniform.Rand()
 
 		riskFactors := RiskFactorsForward(lambda, tau, paramsBs)
@@ -56,7 +56,7 @@ func TestBSFwdRiskFactorsOrder(t *testing.T) {
 		}
 
 		if (riskFactors.Short + testTolerance) < riskFactors.Long {
-			t.Logf("r=%g, mu=%g, sigma=%g, tau=%g\n", paramsBs.r, paramsBs.mu, paramsBs.sigma, tau)
+			t.Logf("r=%g, mu=%g, sigma=%g, tau=%g\n", paramsBs.R, paramsBs.Mu, paramsBs.Sigma, tau)
 			t.Logf("rf short=%g, rf long=%g\n", riskFactors.Short, riskFactors.Long)
 			t.Errorf("risk factor for long must be less than that for short")
 		}
@@ -65,9 +65,9 @@ func TestBSFwdRiskFactorsOrder(t *testing.T) {
 
 func TestTimeTakenForForwardsRiskFactor(t *testing.T) {
 	var paramsBs ModelParamsBS
-	paramsBs.mu = 0.1
-	paramsBs.r = 0.01
-	paramsBs.sigma = 1.2
+	paramsBs.Mu = 0.1
+	paramsBs.R = 0.01
+	paramsBs.Sigma = 1.2
 
 	const numRuns int = 1000000
 	start := time.Now()
