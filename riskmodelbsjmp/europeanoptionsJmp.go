@@ -3,8 +3,8 @@ package riskmodelbsjmp
 import (
 	"math"
 
-	"gitlab.com/vega-protocol/quant/bsformula"
-	"gitlab.com/vega-protocol/quant/riskmeasures"
+	"code.vegaprotocol.io/quant/bsformula"
+	"code.vegaprotocol.io/quant/riskmeasures"
 )
 
 // RiskFactorsCall calculates the risk factors based on Black Scholes model for the evolution

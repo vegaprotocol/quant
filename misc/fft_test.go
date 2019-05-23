@@ -5,7 +5,7 @@ import (
 	"math/cmplx"
 	"testing"
 
-	"gitlab.com/vega-protocol/quant/bsformula"
+	
 )
 
 func TestFFTInputChecks(t *testing.T) {
@@ -92,6 +92,8 @@ func TestFFTvsPresaved(t *testing.T) {
 	}
 }
 
+/*
+
 // We can calculate the price of call option in the Black-Scholes
 // model using FFT; so if the FFT code is correct then
 // the price should closely match the BS formula
@@ -149,3 +151,5 @@ func BSCallPriceFft(minK, S, r, sigma, T float64) ([]float64, []float64, error) 
 	}
 	return strikesGrid, optVals, err
 }
+
+*/

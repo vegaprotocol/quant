@@ -3,7 +3,7 @@ package riskmodelbsjmp
 import (
 	"math"
 
-	"gitlab.com/vega-protocol/quant/riskmeasures"
+	"code.vegaprotocol.io/quant/riskmeasures"
 )
 
 // RiskFactors are used in margin calculation as follows:
@@ -15,7 +15,7 @@ type RiskFactors struct {
 	Short float64
 }
 
-// ModelParamsBS collect the parameters of Black-Scholes model.
+// ModelParamsBSJmp collect the parameters of Black-Scholes model.
 // Here mu is the real-world measure growth rate, r is the risk-free interest rate, sigma is volatiliy
 // gamma is jump intensity (jump inter-arrival times are exponential with this param)
 // finally the jump sizes are normally distributed N(a,b^2),
