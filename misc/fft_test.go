@@ -8,7 +8,7 @@ import (
 
 func TestFFTInputChecks(t *testing.T) {
 	yVals := make([]complex128, 0)
-	yHatVals, err := fft(yVals)
+	yHatVals, err := FFT(yVals)
 	if err == nil {
 		t.Errorf("FFT should fail for arrays of lenght 0")
 	}
@@ -17,7 +17,7 @@ func TestFFTInputChecks(t *testing.T) {
 	}
 
 	yVals2 := make([]complex128, 11)
-	yHatVals2, err2 := fft(yVals2)
+	yHatVals2, err2 := FFT(yVals2)
 	if err2 == nil {
 		t.Errorf("FFT should fail for arrays of lenght that are not power of 2")
 	}
@@ -40,12 +40,12 @@ func TestFourierAndInverse(t *testing.T) {
 		yVals[i] = complex(math.Sin(xGrid[i]), 0)
 	}
 
-	yHatVals, errFft := fft(yVals)
+	yHatVals, errFft := FFT(yVals)
 	if errFft != nil {
 		t.Errorf(errFft.Error())
 		return
 	}
-	yValsAfter, errIfft := ifft(yHatVals)
+	yValsAfter, errIfft := IFFT(yHatVals)
 	if errIfft != nil {
 		t.Errorf(errFft.Error())
 		return
@@ -75,7 +75,7 @@ func TestFFTvsPresaved(t *testing.T) {
 	pythonyHatValsReal := [16]float64{1.26565425e-14, -2.31488188e-02, -1.05066500e-01, -3.02833275e-01, -8.66025404e-01, -5.10345215e+00, 3.56916811e+00, 1.96533263e+00, 1.73205081e+00, 1.96533263e+00, 3.56916811e+00, -5.10345215e+00, -8.66025404e-01, -3.02833275e-01, -1.05066500e-01, -2.31488188e-02}
 	pythonyHatValsImag := [16]float64{0.0, 0.11637697, 0.25365297, 0.45322202, 0.8660254, 3.4100177, -1.47839784, -0.39092897, 0., 0.39092897, 1.47839784, -3.4100177, -0.8660254, -0.45322202, -0.25365297, -0.11637697}
 
-	yHatVals, err := fft(yVals)
+	yHatVals, err := FFT(yVals)
 	if err != nil {
 		t.Errorf(err.Error())
 	} else {
