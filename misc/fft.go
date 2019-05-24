@@ -6,8 +6,7 @@ import (
 	"math/cmplx"
 )
 
-////////////////////////////////////////////////////////////////////////////////
-// Inverse of the Fast Fourier Transform
+// IFFT Inverse of the Fast Fourier Transform
 // for a vector a in an N dimensional space of complex numbers,
 // of lenght which is a power of 2,
 // this calculates, for all k = 0,1,...,N-1
@@ -16,7 +15,7 @@ import (
 // It uses the fft method and the observation that we can get the
 // inverse of FFT by conjugating the input and then conjugating the output
 ////////////////////////////////////////////////////////////////////////////////
-func ifft(a []complex128) ([]complex128, error) {
+func IFFT(a []complex128) ([]complex128, error) {
 	n := len(a)
 	y := make([]complex128, n)
 
@@ -25,7 +24,7 @@ func ifft(a []complex128) ([]complex128, error) {
 		y[i] = complex(real(a[i]), -1.0*imag(a[i]))
 	}
 	// ... do the forward fourier transform on this ...
-	y, err := fft(y)
+	y, err := FFT(y)
 	// ... conjugate the output
 	for i := 0; i < n; i++ {
 		y[i] = complex(real(y[i])/float64(n), -1.0*imag(y[i])/float64(n))
@@ -33,8 +32,7 @@ func ifft(a []complex128) ([]complex128, error) {
 	return y, err
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Fast Fourier Transform
+// FFT Fast Fourier Transform
 // for a vector a in an N dimensional space of complex numbers,
 // this calculates, for all k = 0,1,...,N-1
 // of lenght which is a power of 2,
@@ -44,7 +42,7 @@ func ifft(a []complex128) ([]complex128, error) {
 // this only needs N log N. The catch is that the input lenght must be power of 2
 //
 ////////////////////////////////////////////////////////////////////////////////
-func fft(a []complex128) ([]complex128, error) {
+func FFT(a []complex128) ([]complex128, error) {
 	n := len(a)
 	if n <= 0 {
 		return make([]complex128, 0), errors.New("Array length must be > 0")
@@ -123,7 +121,7 @@ func FourierTransformOfEvenInRealPartFn(
 		fTimesExp := f(xGrid[i]) * cmplx.Exp(complex(0.0, xiMin*DeltaX*float64(i)))
 		a[i] = complex(scaleFactor*real(fTimesExp), scaleFactor*imag(fTimesExp))
 	}
-	fHat, err := fft(a)
+	fHat, err := FFT(a)
 
 	return xiGrid, fHat, err
 }
