@@ -6,6 +6,8 @@ import (
 	"math/cmplx"
 )
 
+const i1 complex128 = complex(0, 1)
+
 // IFFT Inverse of the Fast Fourier Transform
 // for a vector a in an N dimensional space of complex numbers,
 // of lenght which is a power of 2,
@@ -91,13 +93,13 @@ func FFT(a []complex128) ([]complex128, error) {
 	}
 }
 
-// FourierTransformOfEvenInRealPartFn will do the fourier transform of a given function
+// FFTOfEvenInRealPartFn will do the fourier transform of a given function
 // xMin - minimum value in the grid in Fourier space, must be -ve!
 // N - number of discretization points, must be power of 2
 // f - the function to do fourier transform of, it must be odd in imaginary part
 // even in the real part (so we integrate over (0,\infty) only)
-func FourierTransformOfEvenInRealPartFn(
-	xiMin float64, N int, f func(float64) complex128) ([]float64, []complex128, error) {
+func FFTOfEvenInRealPartFn(
+	xMin float64, N int, zeta func(float64) complex128) ([]float64, []complex128, error) {
 
 	if N <= 0 {
 		return make([]float64, 0), make([]complex128, 0), errors.New("N must be > 0")
@@ -105,23 +107,25 @@ func FourierTransformOfEvenInRealPartFn(
 	if (N & (N - 1)) != 0 {
 		return make([]float64, 0), make([]complex128, 0), errors.New("N must be power of 2")
 	}
-	if xiMin >= 0.0 {
+	if xMin >= 0.0 {
 		return make([]float64, 0), make([]complex128, 0), errors.New("xiMin must be strictly negative")
 	}
 
-	DeltaXi := (-xiMin - xiMin) / float64(N-1)
-	xiGrid := make([]float64, N) // grid in the fourier space
-	DeltaX := 2.0 * math.Pi / (float64(N) * DeltaXi)
+	DeltaX := (-xMin - xMin) / float64(N-1)
 	xGrid := make([]float64, N)
-	a := make([]complex128, N)
-	scaleFactor := (1.0 / math.Pi) * DeltaX
-	for i := 0; i < N; i++ {
-		xiGrid[i] = xiMin + float64(i)*DeltaXi
-		xGrid[i] = float64(i+1) * DeltaX
-		fTimesExp := f(xGrid[i]) * cmplx.Exp(complex(0.0, xiMin*DeltaX*float64(i)))
-		a[i] = complex(scaleFactor*real(fTimesExp), scaleFactor*imag(fTimesExp))
-	}
-	fHat, err := FFT(a)
+	DeltaXi := 2.0 * math.Pi / (float64(N) * DeltaX)
 
-	return xiGrid, fHat, err
+	fHat := make([]complex128, N)
+	a := make([]complex128, N)
+
+	for i := 0; i < N; i++ {
+		xGrid[i] = xMin + float64(i)*DeltaX
+		xi := DeltaXi + float64(i)*DeltaXi
+		fHat[i] = zeta(xi)
+
+		a[i] = complex(DeltaXi/math.Pi, 0) * fHat[i] * cmplx.Exp(complex(0, xMin*DeltaXi*float64(i)))
+	}
+	f, err := FFT(a)
+
+	return xGrid, f, err
 }
