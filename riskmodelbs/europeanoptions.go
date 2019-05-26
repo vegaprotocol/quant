@@ -10,7 +10,7 @@ import (
 // RiskFactorsCall calculates the risk factors based on Black Scholes model for the evolution
 // of the risky asset (i.e. geometric brownian motion i.e. risky asset dist. is lognormal)
 // The risk factors returned are for CALL option
-func RiskFactorsCall(lambd, tau, S, K, T float64, p ModelParamsBS) RiskFactors {
+func RiskFactorsCall(lambd, tau, S, K, T float64, p RiskModelParamsBS) RiskFactors {
 	muBar := (p.mu - 0.5*p.sigma*p.sigma) * tau
 	sigmaBar := math.Sqrt(tau) * p.sigma
 
@@ -28,7 +28,7 @@ func RiskFactorsCall(lambd, tau, S, K, T float64, p ModelParamsBS) RiskFactors {
 // RiskFactorsPut calculates the risk factors based on Black Scholes model for the evolution
 // of the risky asset (i.e. geometric brownian motion i.e. risky asset dist. is lognormal)
 // The risk factors returned are for PUT option
-func RiskFactorsPut(lambd, tau, S, K, T float64, p ModelParamsBS) RiskFactors {
+func RiskFactorsPut(lambd, tau, S, K, T float64, p RiskModelParamsBS) RiskFactors {
 	muBar := (p.mu - 0.5*p.sigma*p.sigma) * tau
 	sigmaBar := math.Sqrt(tau) * p.sigma
 

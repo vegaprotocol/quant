@@ -72,7 +72,7 @@ func TestCallPutRiskFactorsUsingMonteCarlo(t *testing.T) {
 		empMarginLongPut := riskmeasures.EmpiricalEs(simLongPuts, lambda, false)
 		empMarginShortPut := riskmeasures.EmpiricalEs(simShortPuts, lambda, false)
 
-		riskFactorsCall := RiskFactorsCall(lambda, tau, S, K, T, ModelParamsBS{mu, r, sigma})
+		riskFactorsCall := RiskFactorsCall(lambda, tau, S, K, T, RiskModelParamsBS{mu, r, sigma})
 
 		marginShortCall := S * riskFactorsCall.Short
 		marginLongCall := S * riskFactorsCall.Long
@@ -86,7 +86,7 @@ func TestCallPutRiskFactorsUsingMonteCarlo(t *testing.T) {
 			t.Errorf("Error=%g is more than tolerance", errorCall)
 		}
 
-		riskFactorsPut := RiskFactorsPut(lambda, tau, S, K, T, ModelParamsBS{mu, r, sigma})
+		riskFactorsPut := RiskFactorsPut(lambda, tau, S, K, T, RiskModelParamsBS{mu, r, sigma})
 
 		marginShortPut := S * riskFactorsPut.Short
 		marginLongPut := S * riskFactorsPut.Long
@@ -110,7 +110,7 @@ func TestCallPutRiskFactorsUsingMonteCarlo(t *testing.T) {
 // that we don't have a regression that really slowed things down
 // for one reason or another.
 func TestTimeTakenForOptionsRiskFactor(t *testing.T) {
-	var paramsBs ModelParamsBS
+	var paramsBs RiskModelParamsBS
 	paramsBs.mu = 0.1
 	paramsBs.r = 0.01
 	paramsBs.sigma = 1.2

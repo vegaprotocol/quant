@@ -15,12 +15,12 @@ type RiskFactors struct {
 	Short float64
 }
 
-// ModelParamsBSJmp collect the parameters of Black-Scholes model.
+// RiskModelParamsBSJmp collect the parameters of Black-Scholes model.
 // Here mu is the real-world measure growth rate, r is the risk-free interest rate, sigma is volatiliy
 // gamma is jump intensity (jump inter-arrival times are exponential with this param)
 // finally the jump sizes are normally distributed N(a,b^2),
 // jmpMeanA = a, variance = jmpStddevB^2 b^2
-type ModelParamsBSJmp struct {
+type RiskModelParamsBSJmp struct {
 	mu         float64 // real world growth
 	r          float64 // interest rate
 	sigma      float64 // volatility of diffusion part
@@ -31,7 +31,7 @@ type ModelParamsBSJmp struct {
 
 // RiskFactorsForward calculates the risk factors based on Black Scholes model for the evolution
 // of the risky asset (i.e. geometric brownian motion i.e. future is lognormal)
-func RiskFactorsForward(lambd, tau float64, modelParams ModelParamsBSJmp) RiskFactors {
+func RiskFactorsForward(lambd, tau float64, modelParams RiskModelParamsBSJmp) RiskFactors {
 	mu := modelParams.mu
 	sigma := modelParams.sigma
 	muBar := (mu - 0.5*sigma*sigma) * tau

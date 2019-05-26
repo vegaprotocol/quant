@@ -3,13 +3,15 @@ package riskmodelbsjmp
 import (
 	"math"
 
+	"code.vegaprotocol.io/quant/misc"
 	"code.vegaprotocol.io/quant/bsformula"
 	"code.vegaprotocol.io/quant/riskmeasures"
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
-func generateJumpDiffSample(T, mu, sigma, gamma, jmpMeanA, jmpStddevB float64) float64 {
-	// I am not sure whether I need to set the random source here as well
+// returns the diffusion part and jump part separately
+func generateJumpDiffSample(T, mu, sigma, gamma, jmpMeanA, jmpStddevB float64) (float64,float64) {
+	
 	var poissonParams distuv.Poisson
 	poissonParams.Lambda = gamma * T
 
@@ -24,30 +26,70 @@ func generateJumpDiffSample(T, mu, sigma, gamma, jmpMeanA, jmpStddevB float64) f
 	// how many jumps
 	Njumps := distuv.Poisson.Rand(poissonParams)
 	x2 := jmpMeanA*Njumps + jmpStddevB*math.Sqrt(Njumps)*z2 - gamma*alpha*T
-	XT := x1 + x2
+	
+	
+	return x1, x2
+}
 
-	return XT
+// returns the diffusion part and jump part separately
+func generateJumpDiffSamples(T, mu, sigma, gamma, jmpMeanA, jmpStddevB float64, N int) ([]float64, []float64) {
+	samplesSTDiffPt := make([]float64, N)
+	samplesSTJumpPt := make([]float64, N)
+	for i := 0; i < N; i++ {
+		diffPart, jumpPart := generateJumpDiffSample(T, mu, sigma, gamma, jmpMeanA, jmpStddevB)
+		samplesSTDiffPt[i] = math.Exp(diffPart)
+		samplesSTJumpPt[i] = math.Exp(jumpPart)
+	}
+	return samplesSTDiffPt, samplesSTJumpPt
 }
 
 // EuropeanCallOptionPriceMC uses direct MC simulation to approximate the
 // call price in the jump diffusion model
-func EuropeanCallOptionPriceMC(S, K, T float64, p ModelParamsBSJmp) float64 {
-	const N int = 10000
+func EuropeanCallOptionPriceMC(S, K, T float64, p PricingModelParamsBSJmp, N int) float64 {
 
-	runningSum := 0.0
+	
+	callPayoffsJmp := make([]float64,N)
+	callPayoffsDiff := make([]float64,N)
 	for i := 0; i < N; i++ {
-		ST := math.Exp(generateJumpDiffSample(T, p.r, p.sigma, p.gamma, p.jmpMeanA, p.jmpStddevB))
-		callPayoff := math.Max(ST-K, 0)
-		runningSum += callPayoff
+		diffPart, jumpPart := generateJumpDiffSample(T, p.r, p.sigma, p.gamma, p.jmpMeanA, p.jmpStddevB) 
+		STJmp := S*math.Exp(diffPart+jumpPart)
+		callPayoffsJmp[i] = math.Exp(-p.r*T)*math.Max(STJmp-K, 0)
+		STDiff := S*math.Exp(diffPart)
+		callPayoffsDiff[i] = math.Exp(-p.r*T)*math.Max(STDiff-K,0)
 	}
-	priceMC := math.Exp(-p.r*T) * runningSum / float64(N)
-	return priceMC
+	bsPriceAsControl := bsformula.BSCallPrice(1, K, p.r, p.sigma, T)
+	return misc.CalculateControlVariateEstimator(callPayoffsJmp, callPayoffsDiff, 
+													bsPriceAsControl)
+}
+
+// EuropeanCallOptionMCAllStrikes uses direct MC simulation to approximate the
+// call price in the jump diffusion model for S=1 and all input strikes
+func EuropeanCallOptionMCAllStrikes(strikes []float64, T float64, p PricingModelParamsBSJmp, N int) []float64 {
+
+	samplesSTDiff, samplesSTJump := generateJumpDiffSamples(T, p.r, p.sigma, p.gamma, p.jmpMeanA, p.jmpStddevB, N)
+	
+	pureDiffPayoffs := make([]float64, N)
+	jumpDiffPayoffs := make([]float64, N)
+
+	numStrikes := len(strikes)
+	prices := make([]float64, numStrikes)
+	for i := 0; i < numStrikes; i++ {
+		K := strikes[i]
+		for j := 0; j < N; j++ {
+			pureDiffPayoffs[j] = math.Exp(-p.r*T)*math.Max(samplesSTDiff[j]-K, 0)
+			jumpDiffPayoffs[j] = math.Exp(-p.r*T)*math.Max(samplesSTDiff[j]*samplesSTJump[j]-K,0)
+		}
+		bsPriceAsControl := bsformula.BSCallPrice(1, K, p.r, p.sigma, T)
+		prices[i] = misc.CalculateControlVariateEstimator(jumpDiffPayoffs, pureDiffPayoffs, bsPriceAsControl)
+	}
+
+	return prices
 }
 
 // RiskFactorsCall calculates the risk factors based on Black Scholes model for the evolution
 // of the risky asset (i.e. geometric brownian motion i.e. risky asset dist. is lognormal)
 // The risk factors returned are for CALL option
-func RiskFactorsCall(lambd, tau, S, K, T float64, p ModelParamsBSJmp) RiskFactors {
+func RiskFactorsCall(lambd, tau, S, K, T float64, p RiskModelParamsBSJmp) RiskFactors {
 	muBar := (p.mu - 0.5*p.sigma*p.sigma) * tau
 	sigmaBar := math.Sqrt(tau) * p.sigma
 
@@ -65,7 +107,7 @@ func RiskFactorsCall(lambd, tau, S, K, T float64, p ModelParamsBSJmp) RiskFactor
 // RiskFactorsPut calculates the risk factors based on Black Scholes model for the evolution
 // of the risky asset (i.e. geometric brownian motion i.e. risky asset dist. is lognormal)
 // The risk factors returned are for PUT option
-func RiskFactorsPut(lambd, tau, S, K, T float64, p ModelParamsBSJmp) RiskFactors {
+func RiskFactorsPut(lambd, tau, S, K, T float64, p RiskModelParamsBSJmp) RiskFactors {
 	muBar := (p.mu - 0.5*p.sigma*p.sigma) * tau
 	sigmaBar := math.Sqrt(tau) * p.sigma
 

@@ -1,6 +1,7 @@
 package bsformula
 
 import (
+	"math"
 	. "math"
 
 	"code.vegaprotocol.io/quant/misc"
@@ -82,4 +83,16 @@ func ImpliedVol(S, K, r, T, price float64, isCall bool) (float64, error) {
 		return impliedVol, nil
 	}
 	return NaN(), err
+}
+
+// EmpiricalCallOptionPrice calculates call option prices for given strike, maturity
+// and risk free rate from samples
+func EmpiricalCallOptionPrice(r, T, K float64, samplesFromST []float64) float64 {
+	N := len(samplesFromST)
+	var runningSum float64 = 0.0
+	for i := 0; i < N; i++ {
+		payoff := math.Max(samplesFromST[i]-K, 0)
+		runningSum += payoff
+	}
+	return math.Exp(-r*T) * runningSum / float64(N)
 }

@@ -1,6 +1,9 @@
 package misc
 
-import "math"
+import (
+	"math"
+	"math/cmplx"
+)
 
 // GaussDensity returns the density of N(0,1) r.v.
 func GaussDensity(x float64) float64 {
@@ -19,4 +22,10 @@ func ApproxGaussCdf(x float64) float64 {
 		return 1.0 - GaussDensity(x)*(a1*k+(a2*k*k)+(a3*k*k*k))
 	}
 	return 1.0 - ApproxGaussCdf(-x)
+}
+
+// CharacteristicOfGaussian returns the values of
+// characteristic function of Gaussian r.v. N(\mu,\sigma^2) at u
+func CharacteristicOfGaussian(u complex128, mu, sigma float64) complex128 {
+	return cmplx.Exp(complex(0, mu)*u - complex(0.5*sigma*sigma, 0)*u*u)
 }

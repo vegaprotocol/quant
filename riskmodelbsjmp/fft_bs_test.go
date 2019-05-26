@@ -43,7 +43,13 @@ func bsCallPriceFftFullAxis(r, sigma, T float64) ([]float64, []float64, error) {
 		vC := complex(v, 0)
 		return cmplx.Exp(i1*complex(v*r*T, 0)) * (phiTwo(vC-i1) - 1.0) / (i1 * vC * (1 + i1*vC))
 	}
-	return CallPriceFftFullAxis(zeta, r, T)
+
+	// this is the integration correction function
+	correction := func(u float64) float64 {
+		return math.Max(1.0-math.Exp(u-r*T), 0)
+	}
+
+	return CallPriceFftFullAxis(zeta, correction)
 }
 
 // TestFFTMethodForBlackScholes can calculate the price of call option in the Black-Scholes

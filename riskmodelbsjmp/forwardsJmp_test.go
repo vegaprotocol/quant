@@ -21,7 +21,7 @@ func TestBSFwdRiskFactorsVal(t *testing.T) {
 	const tau = 1.0 / 365 / 24 / 60
 	const lambda float64 = 0.01
 
-	var paramsBs ModelParamsBSJmp
+	var paramsBs RiskModelParamsBSJmp
 	paramsBs.mu = mu
 	paramsBs.r = r
 	paramsBs.sigma = sigma
@@ -42,7 +42,7 @@ func TestBSFwdRiskFactorsOrder(t *testing.T) {
 	const numRuns int = 1000
 
 	for runIdx := 0; runIdx < numRuns; runIdx++ {
-		var paramsBs ModelParamsBSJmp
+		var paramsBs RiskModelParamsBSJmp
 		paramsBs.mu = distuv.UnitUniform.Rand()
 		paramsBs.r = distuv.UnitUniform.Rand()
 		paramsBs.sigma = distuv.UnitUniform.Rand()
@@ -64,7 +64,7 @@ func TestBSFwdRiskFactorsOrder(t *testing.T) {
 }
 
 func TestTimeTakenForForwardsRiskFactor(t *testing.T) {
-	var paramsBs ModelParamsBSJmp
+	var paramsBs RiskModelParamsBSJmp
 	paramsBs.mu = 0.1
 	paramsBs.r = 0.01
 	paramsBs.sigma = 1.2
