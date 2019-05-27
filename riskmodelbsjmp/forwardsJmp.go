@@ -31,15 +31,35 @@ type RiskModelParamsBSJmp struct {
 
 // RiskFactorsForward calculates the risk factors based on Black Scholes model for the evolution
 // of the risky asset (i.e. geometric brownian motion i.e. future is lognormal)
-func RiskFactorsForward(lambd, tau float64, modelParams RiskModelParamsBSJmp) RiskFactors {
-	mu := modelParams.mu
-	sigma := modelParams.sigma
-	muBar := (mu - 0.5*sigma*sigma) * tau
-	sigmaBar := math.Sqrt(tau) * sigma
+func RiskFactorsForward(lambd, tau float64, modelParams RiskModelParamsBSJmp) (RiskFactors, error) {
 
-	riskFactorShort := riskmeasures.NegativeLogNormalEs(muBar, sigmaBar, lambd) - 1.0
-	riskFactorLong := riskmeasures.LogNormalEs(muBar, sigmaBar, lambd) + 1.0
+	negativeLogNormalWithJmpEs, err1 := riskmeasures.NegativeLogNormalJmpEs(tau,
+		modelParams.mu,
+		modelParams.sigma,
+		modelParams.gamma,
+		modelParams.jmpMeanA,
+		modelParams.jmpStddevB,
+		lambd)
+	if err1 != nil {
+		factors := RiskFactors{math.NaN(), math.NaN()}
+		return factors, err1
+	}
+
+	logNormalWithJmpEs, err2 := riskmeasures.LogNormalJmpEs(tau,
+		modelParams.mu,
+		modelParams.sigma,
+		modelParams.gamma,
+		modelParams.jmpMeanA,
+		modelParams.jmpStddevB,
+		lambd)
+	if err2 != nil {
+		factors := RiskFactors{math.NaN(), math.NaN()}
+		return factors, err2
+	}
+
+	riskFactorShort := negativeLogNormalWithJmpEs - 1.0
+	riskFactorLong := logNormalWithJmpEs + 1.0
 
 	factors := RiskFactors{riskFactorLong, riskFactorShort}
-	return factors
+	return factors, nil
 }

@@ -1,4 +1,4 @@
-package riskmodelbsjmp
+package fftpricing
 
 import (
 	"fmt"

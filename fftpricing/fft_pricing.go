@@ -1,4 +1,4 @@
-package riskmodelbsjmp
+package fftpricing
 
 import (
 	"math"
@@ -11,16 +11,27 @@ import (
 const i1 complex128 = complex(0, 1)
 
 // PricingModelParamsBSJmp collect the parameters of Black-Scholes model.
-// Here mu is the real-world measure growth rate, r is the risk-free interest rate, sigma is volatiliy
-// gamma is jump intensity (jump inter-arrival times are exponential with this param)
+// Here R is the risk-free interest rate, Sigma is volatiliy
+// Gamma is jump intensity (jump inter-arrival times are exponential with this param)
 // finally the jump sizes are normally distributed N(a,b^2),
-// jmpMeanA = a, variance = jmpStddevB^2 b^2
+// JmpMeanA = a, variance = JmpStddevB^2 = b^2
 type PricingModelParamsBSJmp struct {
-	r          float64 // interest rate
-	sigma      float64 // volatility of diffusion part
-	gamma      float64 // jump intensity (jump inter-arrival times are exponential with this param)
-	jmpMeanA   float64 // jump mean
-	jmpStddevB float64 // jump stddev
+	R          float64 // interest rate
+	Sigma      float64 // volatility of diffusion part
+	Gamma      float64 // jump intensity (jump inter-arrival times are exponential with this param)
+	JmpMeanA   float64 // jump mean
+	JmpStddevB float64 // jump stddev
+}
+
+// CreatePricingParamsForBSJmp creates an instance of PricingModelParamsBSJmp
+func CreatePricingParamsForBSJmp(r, sigma, gamma, jmpMeanA, jmpStddevB float64) PricingModelParamsBSJmp {
+	var paramsJmp PricingModelParamsBSJmp
+	paramsJmp.R = r
+	paramsJmp.Sigma = sigma
+	paramsJmp.Gamma = gamma
+	paramsJmp.JmpMeanA = jmpMeanA
+	paramsJmp.JmpStddevB = jmpStddevB
+	return paramsJmp
 }
 
 // CallPriceFftHalfAxis given characteristic function of underlying at time T this method will calculate the
@@ -94,7 +105,7 @@ func CallPriceFftFullAxis(zeta func(float64) complex128, correction func(float64
 	}
 
 	// post process
-	const log2ofLittleN int = 12// how many we will drop at the out of money end
+	const log2ofLittleN int = 12 // how many we will drop at the out of money end
 	littleN := int(math.Pow(2, float64(log2ofLittleN)))
 	strikes := make([]float64, N-littleN)
 	prices := make([]float64, N-littleN)
@@ -125,13 +136,13 @@ func jumpDiffusionCharacteristicFn(u complex128, T, r, sigma, gamma, jmpMeanA, j
 // JumpDiffCallPricesFftFullAxis calculates risk-neutral call price for an option
 // with current asset price S = 1 for "all" strikes
 func JumpDiffCallPricesFftFullAxis(T float64, p PricingModelParamsBSJmp) ([]float64, []float64, error) {
-	r := p.r
-	sigma := p.sigma
+	r := p.R
+	sigma := p.Sigma
 	//halfSigmaSquareT := complex(0.5*sigma*sigma*T, 0)
 
 	// characteristic of jump diff part
 	phiOne := func(u complex128) complex128 {
-		return jumpDiffusionCharacteristicFn(u, T, r, sigma, p.gamma, p.jmpMeanA, p.jmpStddevB)
+		return jumpDiffusionCharacteristicFn(u, T, r, sigma, p.Gamma, p.JmpMeanA, p.JmpStddevB)
 	}
 	// characteristic of normal r.v. with variance given by sigma^2 * T
 	phiTwo := func(u complex128) complex128 {

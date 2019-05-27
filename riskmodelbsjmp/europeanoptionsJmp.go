@@ -3,15 +3,16 @@ package riskmodelbsjmp
 import (
 	"math"
 
-	"code.vegaprotocol.io/quant/misc"
 	"code.vegaprotocol.io/quant/bsformula"
+	"code.vegaprotocol.io/quant/fftpricing"
+	"code.vegaprotocol.io/quant/misc"
 	"code.vegaprotocol.io/quant/riskmeasures"
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
 // returns the diffusion part and jump part separately
-func generateJumpDiffSample(T, mu, sigma, gamma, jmpMeanA, jmpStddevB float64) (float64,float64) {
-	
+func generateJumpDiffSample(T, mu, sigma, gamma, jmpMeanA, jmpStddevB float64) (float64, float64) {
+
 	var poissonParams distuv.Poisson
 	poissonParams.Lambda = gamma * T
 
@@ -26,8 +27,7 @@ func generateJumpDiffSample(T, mu, sigma, gamma, jmpMeanA, jmpStddevB float64) (
 	// how many jumps
 	Njumps := distuv.Poisson.Rand(poissonParams)
 	x2 := jmpMeanA*Njumps + jmpStddevB*math.Sqrt(Njumps)*z2 - gamma*alpha*T
-	
-	
+
 	return x1, x2
 }
 
@@ -45,29 +45,28 @@ func generateJumpDiffSamples(T, mu, sigma, gamma, jmpMeanA, jmpStddevB float64, 
 
 // EuropeanCallOptionPriceMC uses direct MC simulation to approximate the
 // call price in the jump diffusion model
-func EuropeanCallOptionPriceMC(S, K, T float64, p PricingModelParamsBSJmp, N int) float64 {
+func EuropeanCallOptionPriceMC(S, K, T float64, p fftpricing.PricingModelParamsBSJmp, N int) float64 {
 
-	
-	callPayoffsJmp := make([]float64,N)
-	callPayoffsDiff := make([]float64,N)
+	callPayoffsJmp := make([]float64, N)
+	callPayoffsDiff := make([]float64, N)
 	for i := 0; i < N; i++ {
-		diffPart, jumpPart := generateJumpDiffSample(T, p.r, p.sigma, p.gamma, p.jmpMeanA, p.jmpStddevB) 
-		STJmp := S*math.Exp(diffPart+jumpPart)
-		callPayoffsJmp[i] = math.Exp(-p.r*T)*math.Max(STJmp-K, 0)
-		STDiff := S*math.Exp(diffPart)
-		callPayoffsDiff[i] = math.Exp(-p.r*T)*math.Max(STDiff-K,0)
+		diffPart, jumpPart := generateJumpDiffSample(T, p.R, p.Sigma, p.Gamma, p.JmpMeanA, p.JmpStddevB)
+		STJmp := S * math.Exp(diffPart+jumpPart)
+		callPayoffsJmp[i] = math.Exp(-p.R*T) * math.Max(STJmp-K, 0)
+		STDiff := S * math.Exp(diffPart)
+		callPayoffsDiff[i] = math.Exp(-p.R*T) * math.Max(STDiff-K, 0)
 	}
-	bsPriceAsControl := bsformula.BSCallPrice(1, K, p.r, p.sigma, T)
-	return misc.CalculateControlVariateEstimator(callPayoffsJmp, callPayoffsDiff, 
-													bsPriceAsControl)
+	bsPriceAsControl := bsformula.BSCallPrice(1, K, p.R, p.Sigma, T)
+	return misc.CalculateControlVariateEstimator(callPayoffsJmp, callPayoffsDiff,
+		bsPriceAsControl)
 }
 
 // EuropeanCallOptionMCAllStrikes uses direct MC simulation to approximate the
 // call price in the jump diffusion model for S=1 and all input strikes
-func EuropeanCallOptionMCAllStrikes(strikes []float64, T float64, p PricingModelParamsBSJmp, N int) []float64 {
+func EuropeanCallOptionMCAllStrikes(strikes []float64, T float64, p fftpricing.PricingModelParamsBSJmp, N int) []float64 {
 
-	samplesSTDiff, samplesSTJump := generateJumpDiffSamples(T, p.r, p.sigma, p.gamma, p.jmpMeanA, p.jmpStddevB, N)
-	
+	samplesSTDiff, samplesSTJump := generateJumpDiffSamples(T, p.R, p.Sigma, p.Gamma, p.JmpMeanA, p.JmpStddevB, N)
+
 	pureDiffPayoffs := make([]float64, N)
 	jumpDiffPayoffs := make([]float64, N)
 
@@ -76,10 +75,10 @@ func EuropeanCallOptionMCAllStrikes(strikes []float64, T float64, p PricingModel
 	for i := 0; i < numStrikes; i++ {
 		K := strikes[i]
 		for j := 0; j < N; j++ {
-			pureDiffPayoffs[j] = math.Exp(-p.r*T)*math.Max(samplesSTDiff[j]-K, 0)
-			jumpDiffPayoffs[j] = math.Exp(-p.r*T)*math.Max(samplesSTDiff[j]*samplesSTJump[j]-K,0)
+			pureDiffPayoffs[j] = math.Exp(-p.R*T) * math.Max(samplesSTDiff[j]-K, 0)
+			jumpDiffPayoffs[j] = math.Exp(-p.R*T) * math.Max(samplesSTDiff[j]*samplesSTJump[j]-K, 0)
 		}
-		bsPriceAsControl := bsformula.BSCallPrice(1, K, p.r, p.sigma, T)
+		bsPriceAsControl := bsformula.BSCallPrice(1, K, p.R, p.Sigma, T)
 		prices[i] = misc.CalculateControlVariateEstimator(jumpDiffPayoffs, pureDiffPayoffs, bsPriceAsControl)
 	}
 
