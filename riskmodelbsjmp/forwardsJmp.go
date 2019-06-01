@@ -21,12 +21,12 @@ type RiskFactors struct {
 // finally the jump sizes are normally distributed N(a,b^2),
 // jmpMeanA = a, variance = jmpStddevB^2 b^2
 type RiskModelParamsBSJmp struct {
-	mu         float64 // real world growth
-	r          float64 // interest rate
-	sigma      float64 // volatility of diffusion part
-	gamma      float64 // jump intensity (jump inter-arrival times are exponential with this param)
-	jmpMeanA   float64 // jump mean
-	jmpStddevB float64 // jump stddev
+	Mu         float64 // real world growth
+	R          float64 // interest rate
+	Sigma      float64 // volatility of diffusion part
+	Gamma      float64 // jump intensity (jump inter-arrival times are exponential with this param)
+	JmpMeanA   float64 // jump mean
+	JmpStddevB float64 // jump stddev
 }
 
 // RiskFactorsForward calculates the risk factors based on Black Scholes model for the evolution
@@ -34,11 +34,11 @@ type RiskModelParamsBSJmp struct {
 func RiskFactorsForward(lambd, tau float64, modelParams RiskModelParamsBSJmp) (RiskFactors, error) {
 
 	negativeLogNormalWithJmpEs, err1 := riskmeasures.NegativeLogNormalJmpEs(tau,
-		modelParams.mu,
-		modelParams.sigma,
-		modelParams.gamma,
-		modelParams.jmpMeanA,
-		modelParams.jmpStddevB,
+		modelParams.Mu,
+		modelParams.Sigma,
+		modelParams.Gamma,
+		modelParams.JmpMeanA,
+		modelParams.JmpStddevB,
 		lambd)
 	if err1 != nil {
 		factors := RiskFactors{math.NaN(), math.NaN()}
@@ -46,17 +46,36 @@ func RiskFactorsForward(lambd, tau float64, modelParams RiskModelParamsBSJmp) (R
 	}
 
 	logNormalWithJmpEs, err2 := riskmeasures.LogNormalJmpEs(tau,
-		modelParams.mu,
-		modelParams.sigma,
-		modelParams.gamma,
-		modelParams.jmpMeanA,
-		modelParams.jmpStddevB,
+		modelParams.Mu,
+		modelParams.Sigma,
+		modelParams.Gamma,
+		modelParams.JmpMeanA,
+		modelParams.JmpStddevB,
 		lambd)
 	if err2 != nil {
 		factors := RiskFactors{math.NaN(), math.NaN()}
 		return factors, err2
 	}
 
+	riskFactorShort := negativeLogNormalWithJmpEs - 1.0
+	riskFactorLong := logNormalWithJmpEs + 1.0
+
+	factors := RiskFactors{riskFactorLong, riskFactorShort}
+	return factors, nil
+}
+
+// EmpiricalRiskFactorsForward ...
+func EmpiricalRiskFactorsForward(lambd, tau float64, modelParams RiskModelParamsBSJmp, numSamples int) (RiskFactors, error) {
+	expJumpDiffSamples := make([]float64, numSamples)
+	minusExpJumpDiffSamples := make([]float64, numSamples)
+	for i := 0; i < numSamples; i++ {
+		diff, jmp := generateJumpDiffSample(tau, modelParams.Mu, modelParams.Sigma,
+			modelParams.Gamma, modelParams.JmpMeanA, modelParams.JmpStddevB)
+		expJumpDiffSamples[i] = math.Exp(diff + jmp)
+		minusExpJumpDiffSamples[i] = -expJumpDiffSamples[i]
+	}
+	logNormalWithJmpEs := riskmeasures.EmpiricalEs(expJumpDiffSamples, lambd, false)
+	negativeLogNormalWithJmpEs := riskmeasures.EmpiricalEs(minusExpJumpDiffSamples, lambd, false)
 	riskFactorShort := negativeLogNormalWithJmpEs - 1.0
 	riskFactorLong := logNormalWithJmpEs + 1.0
 

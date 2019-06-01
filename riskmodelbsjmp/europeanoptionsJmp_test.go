@@ -13,9 +13,9 @@ func TestFFTFullAxisMethodForJmpAllStrikes(t *testing.T) {
 	const minStrike float64 = 0.5 // we ignore small strikes
 	const maxStrike float64 = 1.5 // we ignore large strikes
 
-	const T float64 = 0.2
+	const T float64 = 1.0 / 365.25
 
-	paramsJmp := fftpricing.CreatePricingParamsForBSJmp(0.0, 0.5, 0.1, 0.4, 0.05)
+	paramsJmp := fftpricing.CreatePricingParamsForBSJmp(0.0, 2., 100., 0., 0.0000001)
 	//paramsJmp.r = 0.0
 	//paramsJmp.sigma = 0.5
 	//paramsJmp.gamma = 0.1

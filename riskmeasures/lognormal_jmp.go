@@ -22,18 +22,25 @@ func LogNormalJmpEs(T, mu, sigma, gamma, a, b, lambd float64) (float64, error) {
 	// we'll use later
 	expMuT := math.Exp(mu * T)
 	// get call prices for all strikes
-	ks, prices, err := fftpricing.JumpDiffCallPricesFftFullAxis(T, p)
+	strikes, prices, err := fftpricing.JumpDiffCallPricesFftFullAxis(T, p)
 	if err != nil {
 		return math.NaN(), err
 	}
 	minVal := 0.0
-	for i := 0; i < len(ks); i++ {
-		k := ks[i]
-		expK := math.Exp(k)
-		newVal := -expK + (1.0/lambd)*(expK-expMuT+expMuT*prices[i])
-		minVal = math.Min(minVal, newVal)
+	for i := 0; i < len(strikes); i++ {
+		K := strikes[i]
+
+		price := prices[i]
+
+		// bit of debug code - checking that my problem doesn't arise from use of FFT pricing
+		// price = bsformula.BSCallPrice(1, K, mu, sigma, T)
+		newVal := -K + (1.0/lambd)*(K-expMuT+expMuT*price)
+		if newVal < minVal {
+			minVal = newVal
+		}
+
 	}
-	return -minVal, nil
+	return minVal, nil
 }
 
 // NegativeLogNormalJmpEs returns the expected shortfall of
@@ -53,16 +60,24 @@ func NegativeLogNormalJmpEs(T, mu, sigma, gamma, a, b, lambd float64) (float64, 
 	// we'll use later
 	expMuT := math.Exp(mu * T)
 	// get call prices for all strikes
-	ks, prices, err := fftpricing.JumpDiffCallPricesFftFullAxis(T, p)
+	strikes, prices, err := fftpricing.JumpDiffCallPricesFftFullAxis(T, p)
 	if err != nil {
 		return math.NaN(), err
 	}
+
 	minVal := (1.0 / lambd) * expMuT
-	for i := 0; i < len(ks); i++ {
-		k := ks[i]
-		expK := math.Exp(k)
-		newVal := expK + (1.0/lambd)*expMuT*prices[i]
-		minVal = math.Min(minVal, newVal)
+	for i := 0; i < len(strikes); i++ {
+		K := strikes[i]
+
+		price := prices[i]
+
+		// bit of debug code - checking that my problem doesn't arise from use of FFT pricing
+		// price = bsformula.BSCallPrice(1, K, mu, sigma, T)
+
+		newVal := K + (1.0/lambd)*expMuT*price
+		if newVal < minVal {
+			minVal = newVal
+		}
 	}
-	return -minVal, nil
+	return minVal, nil
 }

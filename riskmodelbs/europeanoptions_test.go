@@ -111,9 +111,9 @@ func TestCallPutRiskFactorsUsingMonteCarlo(t *testing.T) {
 // for one reason or another.
 func TestTimeTakenForOptionsRiskFactor(t *testing.T) {
 	var paramsBs RiskModelParamsBS
-	paramsBs.mu = 0.1
-	paramsBs.r = 0.01
-	paramsBs.sigma = 1.2
+	paramsBs.Mu = 0.1
+	paramsBs.R = 0.01
+	paramsBs.Sigma = 1.2
 
 	const numRuns int = 1000000
 	start := time.Now()

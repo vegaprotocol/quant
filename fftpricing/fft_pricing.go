@@ -1,6 +1,7 @@
 package fftpricing
 
 import (
+	"errors"
 	"math"
 	"math/cmplx"
 
@@ -71,7 +72,7 @@ func CallPriceFftHalfAxis(zeta func(float64) complex128, r, T float64) ([]float6
 func CallPriceFftFullAxis(zeta func(float64) complex128, correction func(float64) float64) ([]float64, []float64, error) {
 
 	const A float64 = 10000
-	const log2ofN int = 15
+	const log2ofN int = 19
 
 	N := int(math.Pow(2, float64(log2ofN)))
 	const L float64 = 4.0 / 2.0 / math.Pi
@@ -114,6 +115,11 @@ func CallPriceFftFullAxis(zeta func(float64) complex128, correction func(float64
 		strikes[i] = math.Exp(un[j])
 		//prices[i] = real(fk[j]) + math.Max(1.0-math.Exp(un[j]-r*T), 0)
 		prices[i] = real(fk[j]) + correction(un[j])
+		if math.IsNaN(prices[i]) {
+			err = errors.New("CallPriceFftFullAxis: NaN price")
+			return make([]float64, 0), make([]float64, 0), err
+		}
+
 	}
 	return strikes, prices, err
 }
@@ -128,7 +134,7 @@ func jumpDiffusionCharacteristicFn(u complex128, T, r, sigma, gamma, jmpMeanA, j
 	firstExponential := cmplx.Exp(complex(0, (r-0.5*sigma*sigma-alpha*gamma)*T)*u - complex(0.5*sigma*sigma*T, 0)*u*u)
 	secondExponential := complex(1, 0)
 	if gamma > 0 {
-		secondExponential = cmplx.Exp(complex(gamma*T, 0) * (misc.CharacteristicOfGaussian(u, r, sigma) - 1))
+		secondExponential = cmplx.Exp(complex(gamma*T, 0) * (misc.CharacteristicOfGaussian(u, jmpMeanA, jmpStddevB) - 1))
 	}
 	return firstExponential * secondExponential
 }
