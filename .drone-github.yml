@@ -11,7 +11,7 @@ platform:
 steps:
 
   - name: test
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.14.4
     pull: always
     volumes:
       - name: gocache
@@ -28,7 +28,7 @@ steps:
       - make retest
 
   - name: coverage
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.11.13
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.14.4
     volumes:
       - name: gocache
         path: /go/cache
