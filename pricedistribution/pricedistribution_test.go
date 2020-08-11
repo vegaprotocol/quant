@@ -16,7 +16,7 @@ func TestPriceRangeUniform(t *testing.T) {
 	expectedSmin := min + (max-min)*(1-alpha)/2
 	expectedSmax := max - (max-min)*(1-alpha)/2
 
-	Smin, Smax := PriceRange(uniform.Quantile, alpha)
+	Smin, Smax := PriceRange(uniform, alpha)
 
 	alphaRecalculated := (Smax - Smin) / (max - min)
 	if alphaRecalculated-alpha > tolerance {
@@ -49,7 +49,7 @@ func TestPriceDistributionUniform(t *testing.T) {
 	expectedProbabilityPerBin := 1 / float64(nBins)
 	uniform := distuv.Uniform{Min: min, Max: max}
 
-	probabilities := PriceDistribution(uniform.CDF, bins)
+	probabilities := PriceDistribution(uniform, bins)
 
 	totalProbability := 0.0
 	for _, p := range probabilities {

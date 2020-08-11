@@ -1,17 +1,22 @@
 package pricedistribution
 
-func PriceRange(invCDF func(float64) float64, alpha float64) (Smin float64, Smax float64) {
+type AnalyticDistribution interface {
+	CDF(float64) float64
+	Quantile(float64) float64
+}
+
+func PriceRange(d AnalyticDistribution, alpha float64) (Smin float64, Smax float64) {
 	x := (1 - alpha) / 2
-	Smin = invCDF(x)
-	Smax = invCDF(alpha + x)
+	Smin = d.Quantile(x)
+	Smax = d.Quantile(alpha + x)
 	return
 }
 
-func PriceDistribution(CDF func(float64) float64, bins []float64) (probabilities []float64) {
+func PriceDistribution(d AnalyticDistribution, bins []float64) (probabilities []float64) {
 	probabilities = make([]float64, 0, len(bins)-1)
-	pLeft := CDF(bins[0])
+	pLeft := d.CDF(bins[0])
 	for i := 1; i < len(bins); i++ {
-		pRight := CDF(bins[i])
+		pRight := d.CDF(bins[i])
 		pBin := pRight - pLeft
 		probabilities = append(probabilities, pBin)
 		pLeft = pRight
