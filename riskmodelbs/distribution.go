@@ -3,13 +3,19 @@ package riskmodelbs
 import (
 	"math"
 
+	"code.vegaprotocol.io/quant/interfaces"
+
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
-const ProbabilityTolerance = 1e-3
+const probabilityTolerance = 1e-3
 
-func GetDistribution(modelParams ModelParamsBS, S, tau float64) *distuv.LogNormal {
+func (modelParams ModelParamsBS) GetProbabilityDistribution(S, tau float64) interfaces.AnalyticalDistribution {
 	mean := S * math.Exp(modelParams.Mu*tau)
-	stDev := S * S * math.Exp(2*modelParams.Mu*tau) * (math.Exp(modelParams.Sigma*modelParams.Sigma*tau) - 1)
-	return &distuv.LogNormal{Mu: mean, Sigma: stDev}
+	stdDev := S * math.Exp(modelParams.Mu*tau) * math.Sqrt(math.Exp(modelParams.Sigma*modelParams.Sigma*tau)-1)
+	return &distuv.LogNormal{Mu: mean, Sigma: stdDev}
+}
+
+func (modelParams ModelParamsBS) GetProbabilityTolerance() float64 {
+	return probabilityTolerance
 }
