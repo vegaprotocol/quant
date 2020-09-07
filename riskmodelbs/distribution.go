@@ -11,9 +11,11 @@ import (
 const probabilityTolerance = 1e-3
 
 func (modelParams ModelParamsBS) GetProbabilityDistribution(S, tau float64) interfaces.AnalyticalDistribution {
-	mean := S * math.Exp(modelParams.Mu*tau)
-	stdDev := S * math.Exp(modelParams.Mu*tau) * math.Sqrt(math.Exp(modelParams.Sigma*modelParams.Sigma*tau)-1)
-	return &distuv.LogNormal{Mu: mean, Sigma: stdDev}
+	// See: http://www-2.rotman.utoronto.ca/~hull/TechnicalNotes/TechnicalNote2.pdf
+	m := math.Log(S) + (modelParams.Mu-0.5*modelParams.Sigma*modelParams.Sigma)*tau
+	stdDev := modelParams.Sigma * math.Sqrt(tau)
+
+	return &distuv.LogNormal{Mu: m, Sigma: stdDev}
 }
 
 func (modelParams ModelParamsBS) GetProbabilityTolerance() float64 {

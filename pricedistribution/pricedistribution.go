@@ -22,3 +22,19 @@ func PriceDistribution(d interfaces.AnalyticalDistribution, bins []float64) (pro
 	}
 	return
 }
+
+func ProbabilityOfTrading(d interfaces.AnalyticalDistribution, price float64, isBid bool, Smin float64, Smax float64) float64 {
+	if isBid {
+		if price <= Smin || price > Smax {
+			return 0
+		}
+		return d.CDF(price) - d.CDF(Smin)
+	}
+	if price < Smin || price >= Smax {
+		return 0
+	}
+	cdfSmax := d.CDF(Smax)
+	cdfPrice := d.CDF(price)
+	return cdfSmax - cdfPrice
+
+}
