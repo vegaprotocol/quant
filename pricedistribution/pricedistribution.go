@@ -12,10 +12,16 @@ func PriceRange(d interfaces.AnalyticalDistribution, alpha float64) (Smin float6
 }
 
 func PriceDistribution(d interfaces.AnalyticalDistribution, bins []float64) (probabilities []float64) {
-	probabilities = make([]float64, 0, len(bins)-1)
+	n := len(bins)
+	if n < 2 {
+		probabilities = make([]float64, 0, 0)
+		return
+	}
+
+	probabilities = make([]float64, 0, n-1)
 	pLeft := d.CDF(bins[0])
-	for i := 1; i < len(bins); i++ {
-		pRight := d.CDF(bins[i])
+	for _, bin := range bins[1:] {
+		pRight := d.CDF(bin)
 		pBin := pRight - pLeft
 		probabilities = append(probabilities, pBin)
 		pLeft = pRight
