@@ -5,10 +5,10 @@ import (
 )
 
 // PriceRange returns the minimum and maximum price implied by the supplied distribution and probability level
-func PriceRange(d interfaces.AnalyticalDistribution, alpha float64) (Smin float64, Smax float64) {
+func PriceRange(d interfaces.AnalyticalDistribution, alpha float64) (minPrice float64, maxPrice float64) {
 	x := (1 - alpha) / 2
-	Smin = d.Quantile(x)
-	Smax = d.Quantile(alpha + x)
+	minPrice = d.Quantile(x)
+	maxPrice = d.Quantile(alpha + x)
 	return
 }
 
@@ -32,25 +32,25 @@ func PriceDistribution(d interfaces.AnalyticalDistribution, bins []float64) (pro
 	return
 }
 
-// ProbabilityOfTrading returns a probability of trading implied by the supplied distribution, price and order side (bid/offer). Smin and Smax are used to constrain the distribution
+// ProbabilityOfTrading returns a probability of trading implied by the supplied distribution, price and order side (bid/offer). minPrice and maxPrice are used to constrain the distribution
 // in case applyMinMax flag is set to true.
-func ProbabilityOfTrading(d interfaces.AnalyticalDistribution, price float64, isBid bool, applyMinMax bool, Smin float64, Smax float64) float64 {
+func ProbabilityOfTrading(d interfaces.AnalyticalDistribution, price float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64 {
 	if isBid {
-		if applyMinMax && (price <= Smin || price > Smax) {
+		if applyMinMax && (price <= minPrice || price > maxPrice) {
 			return 0
 		}
 		min := 0.0
 		if applyMinMax {
-			min = d.CDF(Smin)
+			min = d.CDF(minPrice)
 		}
 		return d.CDF(price) - min
 	}
-	if applyMinMax && (price < Smin || price >= Smax) {
+	if applyMinMax && (price < minPrice || price >= maxPrice) {
 		return 0
 	}
 	max := 1.0
 	if applyMinMax {
-		max = d.CDF(Smax)
+		max = d.CDF(maxPrice)
 	}
 	return max - d.CDF(price)
 
