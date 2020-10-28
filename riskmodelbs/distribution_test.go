@@ -95,6 +95,20 @@ func TestLogNormalDistributionAgainstNormal(t *testing.T) {
 	}
 }
 
+func GenerateAntitheticSamples(numIndepMCSamples int, bsModelParameters ModelParamsBS, S0 float64, tau float64) (probabilities []float64) {
+	mu := bsModelParameters.Mu
+	sigma := bsModelParameters.Sigma
+
+	numMCSamples := 2 * numIndepMCSamples
+	SatTau := make([]float64, numMCSamples)
+	for i := 0; i < numIndepMCSamples; i++ {
+		z := distuv.UnitNormal.Rand()
+		SatTau[i] = S0 * math.Exp((mu-0.5*sigma*sigma)*tau+sigma*math.Sqrt(tau)*z)
+		SatTau[numIndepMCSamples+i] = S0 * math.Exp((mu-0.5*sigma*sigma)*tau+sigma*math.Sqrt(tau)*(-z)) // antithetic sample
+	}
+	return SatTau
+}
+
 func TestLogNormalDistributionAgainstMonteCarlo(t *testing.T) {
 	relativeTolerance := 1e-3
 	const numIndepMCSamples int = 2000000
@@ -109,14 +123,8 @@ func TestLogNormalDistributionAgainstMonteCarlo(t *testing.T) {
 	bsModelParameters := ModelParamsBS{Mu: mu, R: r, Sigma: sigma}
 	distribution := bsModelParameters.GetProbabilityDistribution(S0, tau)
 	analyticProbabilities := pricedistribution.PriceDistribution(distribution, xs)
-	// generate samples from lognormal distribution
-	numMCSamples := 2 * numIndepMCSamples
-	SatTau := make([]float64, numMCSamples)
-	for i := 0; i < numIndepMCSamples; i++ {
-		z := distuv.UnitNormal.Rand()
-		SatTau[i] = S0 * math.Exp((mu-0.5*sigma*sigma)*tau+sigma*math.Sqrt(tau)*z)
-		SatTau[numIndepMCSamples+i] = S0 * math.Exp((mu-0.5*sigma*sigma)*tau+sigma*math.Sqrt(tau)*(-z)) // antithetic sample
-	}
+	// generate samples from lognormal distribution and sort them for use by CDF
+	SatTau := GenerateAntitheticSamples(numIndepMCSamples, bsModelParameters, S0, tau)
 	sort.Float64s(SatTau)
 
 	for i := 0; i < len(xs)-1; i++ {
@@ -127,6 +135,40 @@ func TestLogNormalDistributionAgainstMonteCarlo(t *testing.T) {
 		diff := math.Abs(analyticProbOfBin - probOfBin)
 		if diff > relativeTolerance {
 			t.Errorf("xs=%g, empirical prob of bin=%g, analytic prob of bin=%g, diff=%g \n", xs[i], probOfBin, analyticProbOfBin, diff)
+		}
+	}
+}
+
+func TestProbOfTradingAgainstMonteCarlo(t *testing.T) {
+	relativeTolerance := 1e-3
+	const numIndepMCSamples int = 4000000
+
+	const r float64 = 0.0
+	const mu float64 = 0.0
+	const sigma float64 = 2
+	const S0 float64 = 110.0
+	const tau = 1.0 / 365.25
+	xs := []float64{106, 107, 108, 109, 109.5, 110, 110.5, 111, 112, 113, 114, 115, 163.5, 200, 500, 1000}
+
+	bsModelParameters := ModelParamsBS{Mu: mu, R: r, Sigma: sigma}
+	distribution := bsModelParameters.GetProbabilityDistribution(S0, tau)
+
+	// generate samples from lognormal distribution and sort them for use by CDF
+	SatTau := GenerateAntitheticSamples(numIndepMCSamples, bsModelParameters, S0, tau)
+	sort.Float64s(SatTau)
+
+	for i := 0; i < len(xs); i++ {
+		isBuySide := xs[i] <= S0
+		analProb := pricedistribution.ProbabilityOfTrading(distribution, xs[i], isBuySide, false, 0, math.Inf(1))
+		empProb := 0.0
+		if isBuySide {
+			empProb = stat.CDF(xs[i], 1, SatTau, nil)
+		} else {
+			empProb = 1.0 - stat.CDF(xs[i], 1, SatTau, nil)
+		}
+		diff := math.Abs(empProb - analProb)
+		if diff > relativeTolerance {
+			t.Errorf("xs=%g, empirical prob=%g, analytic prob of bin=%g, diff=%g \n", xs[i], empProb, analProb, diff)
 		}
 	}
 }
