@@ -2,9 +2,12 @@ package riskmodelbs
 
 import (
 	"math"
+	"sort"
 	"testing"
 
 	"code.vegaprotocol.io/quant/interfaces"
+	"code.vegaprotocol.io/quant/pricedistribution"
+	"gonum.org/v1/gonum/stat"
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
@@ -88,6 +91,42 @@ func TestLogNormalDistributionAgainstNormal(t *testing.T) {
 
 		if math.Abs(logNormalCdfX/stdNormalCdfY-1) > relativeTolerance {
 			t.Errorf("Error=%g is more than tolerance (%g)(x=%g)", math.Abs(logNormalCdfX/stdNormalCdfY-1), relativeTolerance, x)
+		}
+	}
+}
+
+func TestLogNormalDistributionAgainstMonteCarlo(t *testing.T) {
+	relativeTolerance := 1e-3
+	const numIndepMCSamples int = 2000000
+
+	const r float64 = 0.0
+	const mu float64 = 0.0
+	const sigma float64 = 2
+	const S0 float64 = 110.0
+	const tau = 1.0 / 365.25
+	xs := []float64{0, 0.001, 0.1, 1, 10, 15, 23, 51, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 163.5, 200, 500, 1000}
+
+	bsModelParameters := ModelParamsBS{Mu: mu, R: r, Sigma: sigma}
+	distribution := bsModelParameters.GetProbabilityDistribution(S0, tau)
+	analyticProbabilities := pricedistribution.PriceDistribution(distribution, xs)
+	// generate samples from lognormal distribution
+	numMCSamples := 2 * numIndepMCSamples
+	SatTau := make([]float64, numMCSamples)
+	for i := 0; i < numIndepMCSamples; i++ {
+		z := distuv.UnitNormal.Rand()
+		SatTau[i] = S0 * math.Exp((mu-0.5*sigma*sigma)*tau+sigma*math.Sqrt(tau)*z)
+		SatTau[numIndepMCSamples+i] = S0 * math.Exp((mu-0.5*sigma*sigma)*tau+sigma*math.Sqrt(tau)*(-z)) // antithetic sample
+	}
+	sort.Float64s(SatTau)
+
+	for i := 0; i < len(xs)-1; i++ {
+		cdfOfXLb := stat.CDF(xs[i], 1, SatTau, nil)
+		cdfOfXUb := stat.CDF(xs[i+1], 1, SatTau, nil)
+		probOfBin := cdfOfXUb - cdfOfXLb
+		analyticProbOfBin := analyticProbabilities[i]
+		diff := math.Abs(analyticProbOfBin - probOfBin)
+		if diff > relativeTolerance {
+			t.Errorf("xs=%g, empirical prob of bin=%g, analytic prob of bin=%g, diff=%g \n", xs[i], probOfBin, analyticProbOfBin, diff)
 		}
 	}
 }
