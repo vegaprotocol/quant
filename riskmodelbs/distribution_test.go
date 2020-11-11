@@ -95,6 +95,32 @@ func TestLogNormalDistributionAgainstNormal(t *testing.T) {
 	}
 }
 
+func Test_PriceRangeConsistentWithPriceDistribution(t *testing.T) {
+	tolerance := 1e-6
+	const r float64 = 0.016
+	const mu float64 = 0.0
+	const sigma float64 = 2
+	const S0 float64 = 100000
+
+	bsModelParameters := ModelParamsBS{Mu: mu, R: r, Sigma: sigma}
+
+	const horizon = 1.0 / 24.0 / 365.25
+	p := 0.9999
+
+	distribution := bsModelParameters.GetProbabilityDistribution(S0, horizon)
+	min, max := pricedistribution.PriceRange(distribution, p)
+
+	probs := pricedistribution.PriceDistribution(distribution, []float64{min, max})
+
+	if len(probs) != 1 {
+		t.Error("Expected a single entry in the result array")
+	}
+
+	if math.Abs(p-probs[0]) > tolerance {
+		t.Errorf("Error=%g is more than tolerance (%g)(p=%g)", math.Abs(p-probs[0]), tolerance, p)
+	}
+}
+
 func GenerateAntitheticSamples(numIndepMCSamples int, bsModelParameters ModelParamsBS, S0 float64, tau float64) (probabilities []float64) {
 	mu := bsModelParameters.Mu
 	sigma := bsModelParameters.Sigma
@@ -110,7 +136,7 @@ func GenerateAntitheticSamples(numIndepMCSamples int, bsModelParameters ModelPar
 }
 
 func TestLogNormalDistributionAgainstMonteCarlo(t *testing.T) {
-	relativeTolerance := 1e-3
+	tolerance := 1e-3
 	const numIndepMCSamples int = 2000000
 
 	const r float64 = 0.0
@@ -133,7 +159,7 @@ func TestLogNormalDistributionAgainstMonteCarlo(t *testing.T) {
 		probOfBin := cdfOfXUb - cdfOfXLb
 		analyticProbOfBin := analyticProbabilities[i]
 		diff := math.Abs(analyticProbOfBin - probOfBin)
-		if diff > relativeTolerance {
+		if diff > tolerance {
 			t.Errorf("xs=%g, empirical prob of bin=%g, analytic prob of bin=%g, diff=%g \n", xs[i], probOfBin, analyticProbOfBin, diff)
 		}
 	}
@@ -171,4 +197,62 @@ func TestProbOfTradingAgainstMonteCarlo(t *testing.T) {
 			t.Errorf("xs=%g, empirical prob=%g, analytic prob of bin=%g, diff=%g \n", xs[i], empProb, analProb, diff)
 		}
 	}
+}
+
+func TestPriceRangeAgainstMonteCarlo(t *testing.T) {
+	relativeTolerance := 1e-3
+	const numIndepMCSamples int = 4000000
+
+	const r float64 = 0.0
+	const mu float64 = 0.0
+	const sigma float64 = 2
+	const S0 float64 = 12345.0
+
+	taus := []float64{1.0 / 365.25, 1.0 / 365.25 / 24, 1.0 / 365.25 / 24 / 60, 1.0 / 365.25 / 24 / 60 / 60}
+	alphas := []float64{0.5, 0.75, 0.875, 0.9, 0.95, 0.99, 0.999, 0.9999, 0.99999}
+
+	bsModelParameters := ModelParamsBS{Mu: mu, R: r, Sigma: sigma}
+
+	for _, tau := range taus {
+		distribution := bsModelParameters.GetProbabilityDistribution(S0, tau)
+		// generate samples at tau
+		SatTau := GenerateAntitheticSamples(numIndepMCSamples, bsModelParameters, S0, tau)
+		sort.Float64s(SatTau)
+
+		for _, alpha := range alphas {
+
+			min, max := pricedistribution.PriceRange(distribution, alpha)
+			empAlpha := getEmpricalAlphaFromRange(SatTau, min, max)
+			relDiff := math.Abs(alpha/empAlpha - 1)
+			if relDiff > relativeTolerance {
+				t.Errorf("empirical alpha for range [%v, %v] is %v, while %v was prescribed, diff=%g \n", min, max, empAlpha, alpha, relDiff)
+			}
+		}
+	}
+}
+
+func getEmpricalAlphaFromRange(allPrices []float64, min, max float64) float64 {
+	pricesInRange := getPricesInRange(allPrices, min, max)
+
+	return float64(len(pricesInRange)) / float64(len(allPrices))
+}
+
+func getPricesInRange(prices []float64, min, max float64) []float64 {
+	iMin := 0
+	iMax := len(prices) - 1
+	for i := 0; i < len(prices); i++ {
+		if prices[i] >= min {
+			iMin = i
+			break
+		}
+	}
+
+	for i := iMax; i > iMin; i-- {
+		if prices[i] <= max {
+			iMax = i
+			break
+		}
+	}
+
+	return prices[iMin:iMax]
 }
