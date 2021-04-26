@@ -14,7 +14,7 @@ func EmpiricalVaR(x []float64, alpha float64, isSorted bool) float64 {
 	return -stat.Quantile(alpha, 1, x, nil)
 }
 
-// EmpiricalEsForSorted calculates the empirical expected shortfall for samples x
+// EmpiricalEs calculates the empirical expected shortfall for samples x
 // It assumes x has already been sorted
 func EmpiricalEs(x []float64, lambda float64, isSorted bool) float64 {
 	N := len(x)
