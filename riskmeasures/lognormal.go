@@ -11,7 +11,7 @@ func LogNormalVaR(mu, sigma, alpha float64) float64 {
 	return -math.Exp(mu + sigma*distuv.UnitNormal.Quantile(alpha))
 }
 
-// NegLogNormalVaR computes value at risk of LogNormal r.v.
+// NegativeLogNormalVaR computes value at risk of LogNormal r.v.
 func NegativeLogNormalVaR(mu, sigma, alpha float64) float64 {
 	return math.Exp(mu + sigma*distuv.UnitNormal.Quantile(1.0-alpha))
 }
@@ -24,7 +24,7 @@ func LogNormalEs(mu, sigma, lambd float64) float64 {
 	return es
 }
 
-//NegativeLogNormal returns the expected shortfall of a lognormal r.v. at given lambda level
+//NegativeLogNormalEs returns the expected shortfall of a lognormal r.v. at given lambda level
 func NegativeLogNormalEs(mu, sigma, lambd float64) float64 {
 	//var x = distuv.UnitNormal.CDF(0)
 	var quantileForOneMinusLambda = distuv.UnitNormal.Quantile(1.0 - lambd)
