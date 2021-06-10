@@ -75,7 +75,7 @@ func TestProbabilityOfTradingUniformWithMinMax(t *testing.T) {
 	uniform := distuv.Uniform{Min: lb, Max: ub}
 	Smin := lb + 10
 	Smax := ub - 10
-	maxProb := (Smax - Smin) / (ub - lb)
+	maxProb := 1.0
 
 	var testCases = []struct {
 		price    float64
@@ -86,9 +86,11 @@ func TestProbabilityOfTradingUniformWithMinMax(t *testing.T) {
 		{lb, false, 0},
 		{Smin, true, 0},
 		{Smin, false, maxProb},
+		{Smin + tolerance, false, maxProb},
 		{(Smax + Smin) / 2, false, maxProb / 2},
 		{(Smax + Smin) / 2, true, maxProb / 2},
 		{Smax, true, maxProb},
+		{Smax - tolerance, true, maxProb},
 		{Smax, false, 0},
 		{ub, true, 0},
 		{ub, false, 0},
@@ -129,6 +131,30 @@ func TestProbabilityOfTradingUniformNoMinMax(t *testing.T) {
 			t.Logf("expected probability of trading=%g\n", c.expected)
 			t.Logf("actual probability of trading=%g\n", actual)
 			t.Errorf("Error=%g is more than tolerance (%g)", math.Abs(c.expected-actual), tolerance)
+		}
+	}
+}
+
+func TestProbabilityOfTradingLogNormalWithAndWithoutMinMax(t *testing.T) {
+	tolerance := 1e-12
+	logNormal := distuv.LogNormal{Mu: 100, Sigma: 0.5}
+	Smin := 50.0
+	Smax := 200.0
+
+	var testCases = []struct {
+		price float64
+		isBid bool
+		diff  float64
+	}{
+		{Smin + tolerance/2, false, tolerance},
+		{Smax - tolerance/2, true, tolerance},
+	}
+
+	for _, c := range testCases {
+		actual1 := ProbabilityOfTrading(logNormal, c.price, c.isBid, true, Smin, Smax)
+		actual2 := ProbabilityOfTrading(logNormal, c.price, c.isBid, false, math.NaN(), math.NaN())
+		if math.Abs(actual2-actual1) > c.diff {
+			t.Errorf("Difference between probabilities at two prices (%g) is more than required tolerance (%g)", math.Abs(actual2-actual1), c.diff)
 		}
 	}
 }
