@@ -112,8 +112,8 @@ func TestProbabilityOfTradingNormalisation(t *testing.T) {
 	tolernace := 1e-2
 	s0 := 100.0
 	tau := 1 / 365.25 / 24
-	min := 80.0
-	max := 120.0
+	min := 95.0
+	max := 105.0
 	sBid := 99.999
 	sAsk := 100.001
 	expectedProb := 0.5
@@ -128,10 +128,10 @@ func TestProbabilityOfTradingNormalisation(t *testing.T) {
 
 	assert(t, "probability of trading", expectedProb, prob1Bid, tolernace)
 	assert(t, "probability of trading", expectedProb, prob2Bid, tolernace)
-	assert(t, "probability of trading", prob1Bid, prob2Bid, 1e-9)
+	assert(t, "probability of trading", prob1Bid, prob2Bid, tolernace)
 	assert(t, "probability of trading", expectedProb, prob1Ask, tolernace)
 	assert(t, "probability of trading", expectedProb, prob2Ask, tolernace)
-	assert(t, "probability of trading", prob1Ask, prob2Ask, 1e-9)
+	assert(t, "probability of trading", prob1Ask, prob2Ask, tolernace)
 
 }
 
