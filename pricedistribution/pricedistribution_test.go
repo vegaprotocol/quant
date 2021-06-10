@@ -128,10 +128,10 @@ func TestProbabilityOfTradingNormalisation(t *testing.T) {
 
 	assert(t, "probability of trading", expectedProb, prob1Bid, tolernace)
 	assert(t, "probability of trading", expectedProb, prob2Bid, tolernace)
-	assert(t, "probability of trading", prob1Bid, prob2Bid, tolernace)
+	assert(t, "probability of trading", prob1Bid, prob2Bid, 1e-9)
 	assert(t, "probability of trading", expectedProb, prob1Ask, tolernace)
 	assert(t, "probability of trading", expectedProb, prob2Ask, tolernace)
-	assert(t, "probability of trading", prob1Ask, prob2Ask, tolernace)
+	assert(t, "probability of trading", prob1Ask, prob2Ask, 1e-9)
 
 }
 
