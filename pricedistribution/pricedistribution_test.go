@@ -121,9 +121,9 @@ func TestProbabilityOfTradingNormalisation(t *testing.T) {
 	bsModel := riskmodelbs.ModelParamsBS{Mu: 0, R: 0, Sigma: 1.2}
 	pdf := bsModel.GetProbabilityDistribution(s0, tau)
 
-	prob1Bid := ProbabilityOfTrading(pdf, sBid, true, true, min, max)
+	prob1Bid := ProbabilityOfTrading(pdf, sBid, true, true, min, s0)
 	prob2Bid := ProbabilityOfTrading(pdf, sBid, true, false, math.NaN(), math.NaN())
-	prob1Ask := ProbabilityOfTrading(pdf, sAsk, false, true, min, max)
+	prob1Ask := ProbabilityOfTrading(pdf, sAsk, false, true, s0, max)
 	prob2Ask := ProbabilityOfTrading(pdf, sAsk, false, false, math.NaN(), math.NaN())
 
 	assert(t, "probability of trading", expectedProb, prob1Bid, tolernace)

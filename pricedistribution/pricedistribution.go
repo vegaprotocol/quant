@@ -44,7 +44,7 @@ func ProbabilityOfTrading(d interfaces.AnalyticalDistribution, price float64, is
 		}
 		min = d.CDF(minPrice)
 		max = d.CDF(maxPrice)
-		z = max - min
+		z = 2.0 * (max - min)
 	}
 	if isBid {
 		return (d.CDF(price) - min) / z
