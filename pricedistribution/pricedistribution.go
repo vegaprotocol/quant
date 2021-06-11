@@ -34,7 +34,7 @@ func PriceDistribution(d interfaces.AnalyticalDistribution, bins []float64) (pro
 
 // ProbabilityOfTrading returns a probability of trading implied by the supplied distribution, price and order side (bid/offer). minPrice and maxPrice are used to constrain the distribution
 // in case applyMinMax flag is set to true.
-func ProbabilityOfTrading(d interfaces.AnalyticalDistribution, price float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64 {
+func ProbabilityOfTrading(d interfaces.AnalyticalDistribution, currentPrice, price float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64 {
 	min := 0.0
 	max := 1.0
 	z := 1.0
@@ -44,7 +44,13 @@ func ProbabilityOfTrading(d interfaces.AnalyticalDistribution, price float64, is
 		}
 		min = d.CDF(minPrice)
 		max = d.CDF(maxPrice)
-		z = max - min
+
+		cdfS0 := d.CDF(currentPrice)
+		if isBid {
+			z = cdfS0 - min
+		} else {
+			z = max - cdfS0
+		}
 	}
 	if isBid {
 		return (d.CDF(price) - min) / z

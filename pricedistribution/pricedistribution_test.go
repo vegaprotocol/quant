@@ -78,7 +78,7 @@ func TestProbabilityOfTradingUniformWithMinMax(t *testing.T) {
 	}
 
 	for _, c := range testCases {
-		actual := ProbabilityOfTrading(uniform, c.price, c.isBid, true, Smin, Smax)
+		actual := ProbabilityOfTrading(uniform, 150, c.price, c.isBid, true, Smin, Smax)
 		assert(t, "probability of trading", c.expected, actual, tolerance)
 	}
 }
@@ -103,7 +103,7 @@ func TestProbabilityOfTradingUniformNoMinMax(t *testing.T) {
 	}
 
 	for _, c := range testCases {
-		actual := ProbabilityOfTrading(uniform, c.price, c.isBid, false, 0, 0)
+		actual := ProbabilityOfTrading(uniform, 150, c.price, c.isBid, false, 0, 0)
 		assert(t, "probability of trading", c.expected, actual, tolerance)
 	}
 }
@@ -121,10 +121,10 @@ func TestProbabilityOfTradingNormalisation(t *testing.T) {
 	bsModel := riskmodelbs.ModelParamsBS{Mu: 0, R: 0, Sigma: 1.2}
 	pdf := bsModel.GetProbabilityDistribution(s0, tau)
 
-	prob1Bid := ProbabilityOfTrading(pdf, sBid, true, true, min, max)
-	prob2Bid := ProbabilityOfTrading(pdf, sBid, true, false, math.NaN(), math.NaN())
-	prob1Ask := ProbabilityOfTrading(pdf, sAsk, false, true, min, max)
-	prob2Ask := ProbabilityOfTrading(pdf, sAsk, false, false, math.NaN(), math.NaN())
+	prob1Bid := ProbabilityOfTrading(pdf, s0, sBid, true, true, min, max)
+	prob2Bid := ProbabilityOfTrading(pdf, s0, sBid, true, false, math.NaN(), math.NaN())
+	prob1Ask := ProbabilityOfTrading(pdf, s0, sAsk, false, true, min, max)
+	prob2Ask := ProbabilityOfTrading(pdf, s0, sAsk, false, false, math.NaN(), math.NaN())
 
 	assert(t, "probability of trading", expectedProb, prob1Bid, tolernace)
 	assert(t, "probability of trading", expectedProb, prob2Bid, tolernace)

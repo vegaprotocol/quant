@@ -185,7 +185,7 @@ func TestProbOfTradingAgainstMonteCarlo(t *testing.T) {
 
 	for i := 0; i < len(xs); i++ {
 		isBuySide := xs[i] <= S0
-		analProb := pricedistribution.ProbabilityOfTrading(distribution, xs[i], isBuySide, false, 0, math.Inf(1))
+		analProb := pricedistribution.ProbabilityOfTrading(distribution, S0, xs[i], isBuySide, false, 0, math.Inf(1))
 		empProb := 0.0
 		if isBuySide {
 			empProb = stat.CDF(xs[i], 1, SatTau, nil)
