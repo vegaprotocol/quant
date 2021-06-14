@@ -88,6 +88,7 @@ func TestProbabilityOfTradingUniformNoMinMax(t *testing.T) {
 	lb := 100.0
 	ub := 200.0
 	uniform := distuv.Uniform{Min: lb, Max: ub}
+	maxProb := 1.0
 
 	var testCases = []struct {
 		price    float64
@@ -95,10 +96,10 @@ func TestProbabilityOfTradingUniformNoMinMax(t *testing.T) {
 		expected float64
 	}{
 		{lb, true, 0},
-		{lb, false, 1},
-		{(lb + ub) / 2, false, 0.5},
-		{(lb + ub) / 2, true, 0.5},
-		{ub, true, 1},
+		{lb, false, maxProb},
+		{(lb + ub) / 2, false, maxProb / 2},
+		{(lb + ub) / 2, true, maxProb / 2},
+		{ub, true, maxProb},
 		{ub, false, 0},
 	}
 
@@ -116,22 +117,21 @@ func TestProbabilityOfTradingNormalisation(t *testing.T) {
 	max := 105.0
 	sBid := 99.999
 	sAsk := 100.001
-	expectedProb := 0.5
+	expectedProbUncontraint := 0.5
+	expectedProbContraint := 1.0
 
 	bsModel := riskmodelbs.ModelParamsBS{Mu: 0, R: 0, Sigma: 1.2}
 	pdf := bsModel.GetProbabilityDistribution(s0, tau)
 
-	prob1Bid := ProbabilityOfTrading(pdf, sBid, true, true, min, s0)
-	prob2Bid := ProbabilityOfTrading(pdf, sBid, true, false, math.NaN(), math.NaN())
-	prob1Ask := ProbabilityOfTrading(pdf, sAsk, false, true, s0, max)
-	prob2Ask := ProbabilityOfTrading(pdf, sAsk, false, false, math.NaN(), math.NaN())
+	probBidConstraint := ProbabilityOfTrading(pdf, sBid, true, true, min, s0)
+	probBidUnconstraint := ProbabilityOfTrading(pdf, sBid, true, false, math.NaN(), math.NaN())
+	probAskContraint := ProbabilityOfTrading(pdf, sAsk, false, true, s0, max)
+	probAskUnconstraint := ProbabilityOfTrading(pdf, sAsk, false, false, math.NaN(), math.NaN())
 
-	assert(t, "probability of trading", expectedProb, prob1Bid, tolernace)
-	assert(t, "probability of trading", expectedProb, prob2Bid, tolernace)
-	assert(t, "probability of trading", prob1Bid, prob2Bid, tolernace)
-	assert(t, "probability of trading", expectedProb, prob1Ask, tolernace)
-	assert(t, "probability of trading", expectedProb, prob2Ask, tolernace)
-	assert(t, "probability of trading", prob1Ask, prob2Ask, tolernace)
+	assert(t, "probability of trading", expectedProbContraint, probBidConstraint, tolernace)
+	assert(t, "probability of trading", expectedProbUncontraint, probBidUnconstraint, tolernace)
+	assert(t, "probability of trading", expectedProbContraint, probAskContraint, tolernace)
+	assert(t, "probability of trading", expectedProbUncontraint, probAskUnconstraint, tolernace)
 
 }
 
