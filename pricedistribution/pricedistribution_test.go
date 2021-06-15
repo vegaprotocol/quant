@@ -56,7 +56,7 @@ func TestProbabilityOfTradingUniformWithMinMax(t *testing.T) {
 	uniform := distuv.Uniform{Min: lb, Max: ub}
 	Smin := lb + 10
 	Smax := ub - 10
-	maxProb := 0.5
+	maxProb := 1.0
 
 	var testCases = []struct {
 		price    float64
