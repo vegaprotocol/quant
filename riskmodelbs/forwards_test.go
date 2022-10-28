@@ -81,3 +81,48 @@ func TestTimeTakenForForwardsRiskFactor(t *testing.T) {
 	fmt.Printf("Num of times we can calculate forward risk factors in BS model: %.1f per second.\n",
 		float64(numRuns)/elapsed.Seconds())
 }
+
+func TestBSFwdRiskFactorsRanges(t *testing.T) {
+	const numRuns int = 1e8
+
+	const lambdaMin float64 = 1e-8
+	const lambdaMax float64 = 0.1
+	const muMin = -1e-6
+	const muMax = 1e6
+	const tauMin = 1e-6
+	const tauMax = 1.0 // maximum one year
+	const sigmaMin = 1e-3
+	const sigmaMax = 100
+
+	for runIdx := 0; runIdx < numRuns; runIdx++ {
+		var paramsBs ModelParamsBS
+		paramsBs.R = 0
+
+		paramsBs.Mu = muMin + distuv.UnitUniform.Rand()*(muMax-muMin)
+		paramsBs.Sigma = sigmaMin + distuv.UnitUniform.Rand()*(sigmaMax-sigmaMin)
+		tau := tauMin + distuv.UnitUniform.Rand()*(tauMax-tauMin)
+		lambda := lambdaMin + distuv.UnitUniform.Rand()*(lambdaMax-lambdaMin)
+
+		riskFactors := RiskFactorsForward(lambda, tau, paramsBs)
+
+		if math.IsNaN(riskFactors.Short) || math.IsNaN(riskFactors.Long) ||
+			math.IsInf(riskFactors.Short, 0) || math.IsInf(riskFactors.Long, 0) {
+			t.Logf("r=%g, mu=%g, sigma=%g, tau=%g\n", paramsBs.R, paramsBs.Mu, paramsBs.Sigma, tau)
+			t.Logf("rf short=%g, rf long=%g\n", riskFactors.Short, riskFactors.Long)
+
+			t.Errorf("risk factor is NaN or Inf")
+		}
+
+		if riskFactors.Short <= 0 || riskFactors.Long <= 0 {
+			t.Logf("r=%g, mu=%g, sigma=%g, tau=%g\n", paramsBs.R, paramsBs.Mu, paramsBs.Sigma, tau)
+			t.Logf("rf short=%g, rf long=%g\n", riskFactors.Short, riskFactors.Long)
+			t.Errorf("negative risk factors")
+		}
+
+		if (riskFactors.Short + testTolerance) < riskFactors.Long {
+			t.Logf("r=%g, mu=%g, sigma=%g, tau=%g\n", paramsBs.R, paramsBs.Mu, paramsBs.Sigma, tau)
+			t.Logf("rf short=%g, rf long=%g\n", riskFactors.Short, riskFactors.Long)
+			t.Errorf("risk factor for long must be less than that for short")
+		}
+	}
+}
